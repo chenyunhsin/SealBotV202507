@@ -3,9 +3,17 @@ from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app import models, schemas
 from passlib.context import CryptContext
-
+import bcrypt
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
+async def authenticate_user(session: AsyncSession, username: str, password: str):
+    user = await get_user_by_username(session, username)
+    if not user:
+        return None
+    if not bcrypt.checkpw(password.encode(), user.password_hash.encode()):
+        return None
+    return user
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 

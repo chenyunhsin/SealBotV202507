@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <title>SealBot 小海豹養成遊戲</title>
+</head>
+<body>
+  <h1>🐟 SealBot 小海豹養成遊戲</h1>
+
+  <div>
+    <span>歡迎你，<span id="username"></span>！</span>
+    <button onclick="logout()">登出</button>
+  </div>
+
+  <section>
+    <h2>領養小海豹</h2>
+    <input id="seal_name" placeholder="小海豹名稱" />
+    <button onclick="adopt()">領養</button>
+  </section>
+
+  <hr />
+
+  <section>
+    <h2>查看你的小海豹</h2>
+    <button onclick="status()">查詢狀態</button>
+  </section>
+
+  <pre id="output" style="background:#f0f0f0; padding:1em;"></pre>
+
+  <script>
+    // 顯示使用者名稱
+    document.getElementById("username").textContent = localStorage.getItem("username") || "";
+
+    // 登出功能
+    function logout() {
+      localStorage.clear();
+      window.location.href = "index.html";
+    }
+
+    async function adopt() {
+      const user_id = localStorage.getItem("user_id");
+      const name = document.getElementById("seal_name").value;
+
+      if (!user_id) {
+        alert("請先登入");
+        window.location.href = "index.html";
+        return;
+      }
+
+      // 先查詢是否已有小海豹
+      const res_status = await fetch(`/seal/status/${user_id}`);
+      const seal = await res_status.json();
+
+      if (seal && seal.id) {
+        document.getElementById("output").textContent = "你已經領養過小海豹囉，不能重複領養。";
+        return;
+      }
+
+      // 領養
+      const res = await fetch("/seal/adopt", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ user_id: parseInt(user_id), name })
+      });
+
+      const result = await res.text();
+      document.getElementById("output").textContent = "🐣 領養結果:\n" + result;
+    }
+
+    async function status() {
+      const user_id = localStorage.getItem("user_id");
+      if (!user_id) {
+        alert("請先登入");
+        window.location.href = "index.html";
+        return;
+      }
+
+      const res = await fetch(`/seal/status/${user_id}`);
+      if (res.status === 404) {
+        document.getElementById("output").textContent = "你還沒有領養小海豹哦。";
+        return;
+      }
+      const seal = await res.json();
+      document.getElementById("output").textContent = JSON.stringify(seal, null, 2);
+    }
+  </script>
+</body>
+</html>
