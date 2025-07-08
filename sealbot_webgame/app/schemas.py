@@ -1,6 +1,7 @@
 # app/schemas.py
 from pydantic import BaseModel
 from typing import Optional
+from sqlmodel import SQLModel, Field
 
 class UserCreate(BaseModel):
     username: str
@@ -26,3 +27,7 @@ class SealOut(BaseModel):
 
     class Config:
         orm_mode = True
+class UserLogin(SQLModel):
+    username: str
+    password: str
+

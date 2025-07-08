@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>你的海豹</title>
+</head>
+<body>
+  <h1>🦭領養小海豹遊戲</h1>
+
+  <button onclick="adoptSeal()">領養海豹</button>
+  <button onclick="getSeal()">查看我的海豹</button>
+
+  <div id="seal-info" style="margin-top: 20px;"></div>
+  <div id="seal-image" style="margin-top: 20px;"></div>
+
+  <script>
+    const userId = localStorage.getItem("user_id");
+
+    async function adoptSeal() {
+        console.log("目前 localStorage 的 userId:", userId);
+      const response = await fetch("/seal/adopt", {
+        
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ owner_id: parseInt(userId) })
+      });
+
+      if (response.ok) {
+        alert("成功領養一隻海豹！");
+      } else {
+        alert("你已經領養過了！");
+      }
+    }
+
+    async function getSeal() {
+        console.log("目前 localStorage 的 userId:", userId);
+      const response = await fetch(`/seal/status/${userId}`);
+      if (!response.ok) {
+        document.getElementById("seal-info").innerText = "你還沒有海豹喔";
+        document.getElementById("seal-image").innerHTML = "";
+        return;
+      }
+
+      const data = await response.json();
+      const seal = data.seal;
+      const image = data.image;
+
+      document.getElementById("seal-info").innerText =
+        `你的海豹名字是：${seal.name || "未命名"}\n說明：${image.description}`;
+
+      document.getElementById("seal-image").innerHTML =
+        `<img src="${image.img}" alt="seal image" width="300" style="border-radius: 12px; box-shadow: 0 0 8px gray;">`;
+    }
+  </script>
+</body>
+</html>
