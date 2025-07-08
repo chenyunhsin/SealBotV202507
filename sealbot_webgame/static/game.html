@@ -6,7 +6,7 @@
 </head>
 <body>
   <h1>🦭領養小海豹遊戲</h1>
-
+  <input type="text" id="seal-name" placeholder="請輸入小海豹的名字" />
   <button onclick="adoptSeal()">領養海豹</button>
   <button onclick="getSeal()">查看我的海豹</button>
 
@@ -18,11 +18,14 @@
 
     async function adoptSeal() {
         console.log("目前 localStorage 的 userId:", userId);
+        const nameInput = document.getElementById("seal-name");
+  const sealName = nameInput.value.trim();
       const response = await fetch("/seal/adopt", {
         
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ owner_id: parseInt(userId) })
+        body: JSON.stringify({ owner_id: parseInt(userId),
+            name: sealName })
       });
 
       if (response.ok) {
