@@ -3,29 +3,115 @@
 <head>
   <meta charset="UTF-8" />
   <title>SealBot 登入 / 註冊</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC&display=swap');
+
+    body {
+      font-family: 'Noto Serif TC', serif;
+      background-image: url("https://i.imgur.com/5eC9I2M.jpg"); /* 替換為你喜歡的養成遊戲風背景 */
+      background-size: cover;
+      background-position: center;
+      margin: 0;
+      padding: 2em;
+      color: #4B2E2E;
+    }
+
+    h1 {
+      
+  text-align: center;
+  font-size: 2em;
+  background-color: rgba(255,255,255,0.8);
+  border-radius: 1em;
+  padding: 0.5em 1em;
+  display: block;
+  width: fit-content;
+  margin: 1em auto;
+
+    }
+
+    section {
+      background-color: rgba(255, 255, 255, 0.85);
+      padding: 1.5em;
+      margin: 2em auto;
+      border-radius: 1em;
+      max-width: 400px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+
+    input {
+      display: block;
+      width:80%;
+      padding: 0.7em;
+      margin-bottom: 1em;
+      font-size: 1em;
+      border-radius: 0.5em;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #FF90B3;
+      border: none;
+      padding: 0.8em 1.5em;
+      font-size: 1em;
+      color: white;
+      border-radius: 1em;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #FF6A9F;
+    }
+
+    pre#output {
+      background-color: rgba(255,255,255,0.7);
+      padding: 1em;
+      border-radius: 1em;
+      max-width: 400px;
+      margin: 1em auto;
+      font-size: 0.95em;
+      white-space: pre-wrap;
+    }
+
+    audio {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+    }
+  </style>
 </head>
 <body>
-  <h1>SealBot 小海豹遊戲 - 登入 / 註冊</h1>
+  <h1>🦭 SealBot 小海豹養成日記 </h1>
 
   <section>
-    <h2>註冊帳號</h2>
+    <h2>✨ 註冊帳號 ✨</h2>
     <input id="reg_username" placeholder="使用者名稱" />
     <input id="reg_password" type="password" placeholder="密碼" />
     <button onclick="register()">註冊</button>
   </section>
 
-  <hr />
-
   <section>
-    <h2>登入帳號</h2>
+    <h2>🔑 登入帳號 🔑</h2>
     <input id="login_username" placeholder="使用者名稱" />
     <input id="login_password" type="password" placeholder="密碼" />
     <button onclick="login()">登入</button>
   </section>
 
-  <pre id="output" style="background:#f0f0f0; padding:1em;"></pre>
+  <pre id="output"></pre>
+
+  <!-- 背景音樂 -->
+  <audio id="bgm" autoplay loop controls volume="0.2">
+    <source src="static/music/PrincessMaker4Portable(PSP)OST33.mp3" type="audio/mpeg">
+    您的瀏覽器不支援音樂播放
+  </audio>
 
   <script>
+    window.addEventListener("click", () => {
+    const bgm = document.getElementById("bgm");
+    bgm.muted = false;
+    bgm.volume = 0.2;
+    bgm.play();
+  });
     async function register() {
       const username = document.getElementById("reg_username").value;
       const password = document.getElementById("reg_password").value;
