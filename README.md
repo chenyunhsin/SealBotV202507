@@ -2,4 +2,4 @@
 SealBot refactor, use fastapi
 
 # Demo
-![Demo](https://github.com/chenyunhsin/SealBotV202507/blob/develop/sealbot_webgame/static/demo070825.gif?raw=true)
+![Demo](https://github.com/chenyunhsin/SealBotV202507/blob/develop/sealbot_webgame/static/demo070925.gif?raw=true)
