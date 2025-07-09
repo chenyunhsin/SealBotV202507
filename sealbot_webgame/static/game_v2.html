@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>你的海豹</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC&display=swap');
+
+    body {
+      font-family: 'Noto Serif TC', serif;
+      background-image: url('https://i.imgur.com/xqJXqWb.jpg'); /* 童話風背景，可自行替換 */
+      background-size: cover;
+      background-position: center;
+      margin: 0;
+      padding: 2em;
+      color: #4B2E2E;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2.5em;
+      background-color: rgba(255, 255, 255, 0.85);
+      border-radius: 1em;
+      padding: 0.5em 1.5em;
+      width: fit-content;
+      margin: 1em auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+
+    .container {
+      background-color: rgba(255, 255, 255, 0.85);
+      border-radius: 1.5em;
+      padding: 2em;
+      max-width: 500px;
+      margin: 2em auto;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+      text-align: center;
+    }
+
+    input {
+      width: 90%;
+      padding: 0.7em;
+      margin-bottom: 1em;
+      font-size: 1em;
+      border-radius: 0.5em;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #FF90B3;
+      border: none;
+      padding: 0.7em 1.5em;
+      margin: 0.5em;
+      font-size: 1em;
+      color: white;
+      border-radius: 1em;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #FF6A9F;
+    }
+
+    #seal-info {
+      margin-top: 1.5em;
+      white-space: pre-wrap;
+      font-size: 1.1em;
+      text-align: left;
+    }
+
+    #seal-image img {
+      margin-top: 1em;
+      border-radius: 1em;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+    }
+
+    audio {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🦭 領養小海豹遊戲</h1>
+
+  <div class="container">
+    <div id="adopt-area">
+      <input type="text" id="seal-name" placeholder="請輸入小海豹的名字" />
+      <br />
+      <button onclick="adoptSeal()">🐚 領養海豹</button>
+    </div>
+  
+    <button id='get-area' onclick="getSeal()">🪸 查看我的海豹</button>
+  
+    <div id="seal-info"></div>
+    <div id="seal-image"></div>
+  </div>
+
+  <!-- 可愛背景音樂，可換成你自己的 -->
+  <audio id='bgm2' autoplay loop controls volume="0.2">
+    <source src="music/PrincessMaker4Portable(PSP)OST32.mp3" type="audio/mpeg">
+    您的瀏覽器不支援音樂播放
+  </audio>
+
+  <script>
+    const userId = localStorage.getItem("user_id");
+    
+    window.addEventListener("DOMContentLoaded", getSeal);
+    window.addEventListener("click", () => {
+    const bgm = document.getElementById("bgm2");
+    bgm.muted = false;
+    bgm.volume = 0.2;
+    bgm.play();
+  });
+    async function adoptSeal() {
+      console.log("目前 localStorage 的 userId:", userId);
+      const nameInput = document.getElementById("seal-name");
+      const sealName = nameInput.value.trim();
+      const response = await fetch("/seal/adopt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ owner_id: parseInt(userId), name: sealName })
+      });
+
+      if (response.ok) {
+        alert("成功領養一隻海豹！");
+        document.getElementById("get-area").style.display = "block";
+        document.getElementById("adopt-area").style.display = "none";
+        document.getElementById("seal-info").innerText = "";
+      } else {
+        alert("你已經領養過了！");
+      }
+    }
+
+    async function getSeal() {
+      console.log("目前 localStorage 的 userId:", userId);
+      const response = await fetch(`/seal/status/${userId}`);
+      if (!response.ok) {
+        document.getElementById("seal-info").innerText = "你還沒有海豹喔";
+        document.getElementById("seal-image").innerHTML = "";
+        document.getElementById("get-area").style.display = "none";
+        document.getElementById("adopt-area").style.display = "block";
+        return;
+      }
+
+      const data = await response.json();
+      const seal = data.seal;
+      const image = data.image;
+
+      document.getElementById("seal-info").innerText =
+        `你的海豹名字是：${seal.name || "未命名"}\n說明：${image.description}`;
+
+      document.getElementById("seal-image").innerHTML =
+        `<img src="${image.img}" alt="seal image" width="300">`;
+        document.getElementById("get-area").style.display = "block";
+        document.getElementById("adopt-area").style.display = "none";
+    }
+  </script>
+</body>
+</html>

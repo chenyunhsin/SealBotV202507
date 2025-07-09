@@ -38,13 +38,13 @@ async def adopt_seal(seal: schemas.SealCreate, session: AsyncSession = Depends(d
 
 @app.get("/seal/status/{user_id}")
 async def get_seal(user_id: int, session: AsyncSession = Depends(db.get_session)):
-    logger.debug(f"***ＯＯＯ")
+
     seal = await crud.get_seal_by_user_id(session, user_id)
     if not seal:
         raise HTTPException(status_code=404, detail="No seal found")
     
     image = get_random_seal()
-    logger.debug(f"***{image}")
+
     return {
         "seal": seal,
         "image": image

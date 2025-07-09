@@ -2,57 +2,698 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>你的海豹</title>
-</head>
-<body>
-  <h1>🦭領養小海豹遊戲</h1>
-  <input type="text" id="seal-name" placeholder="請輸入小海豹的名字" />
-  <button onclick="adoptSeal()">領養海豹</button>
-  <button onclick="getSeal()">查看我的海豹</button>
+  <title>我的小海豹 - 領養遊戲</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Cute+Font&display=swap'); /* Cute Font 用於標題，如果想更可愛 */
 
-  <div id="seal-info" style="margin-top: 20px;"></div>
-  <div id="seal-image" style="margin-top: 20px;"></div>
-
-  <script>
-    const userId = localStorage.getItem("user_id");
-
-    async function adoptSeal() {
-        console.log("目前 localStorage 的 userId:", userId);
-        const nameInput = document.getElementById("seal-name");
-  const sealName = nameInput.value.trim();
-      const response = await fetch("/seal/adopt", {
-        
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ owner_id: parseInt(userId),
-            name: sealName })
-      });
-
-      if (response.ok) {
-        alert("成功領養一隻海豹！");
-      } else {
-        alert("你已經領養過了！");
-      }
+    body {
+      font-family: 'Noto Serif TC', serif;
+      background-image: url('https://i.imgur.com/xqJXqWb.jpg'); /* 童話風背景，可自行替換 */
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed; /* 背景固定，內容滾動 */
+      margin: 0;
+      padding: 2em;
+      color: #4B2E2E;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
     }
 
-    async function getSeal() {
-        console.log("目前 localStorage 的 userId:", userId);
-      const response = await fetch(`/seal/status/${userId}`);
-      if (!response.ok) {
-        document.getElementById("seal-info").innerText = "你還沒有海豹喔";
-        document.getElementById("seal-image").innerHTML = "";
+    h1 {
+      font-family: 'Cute Font', cursive; /* 更可愛的字體 */
+      text-align: center;
+      font-size: 3.5em; /* 稍微大一點 */
+      background-color: rgba(255, 255, 255, 0.9); /* 更實心的背景 */
+      border-radius: 1.5em; /* 更圓潤 */
+      padding: 0.3em 1em;
+      margin: 1em auto 1.5em auto; /* 調整外邊距 */
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2); /* 更明顯的陰影 */
+      color: #7B3F00; /* 可愛暖色系 */
+      border: 3px solid #FFDDC1; /* 邊框 */
+      text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.7); /* 標題文字陰影 */
+    }
+
+    .container {
+      background-color: rgba(255, 255, 255, 0.95); /* 更不透明 */
+      border-radius: 2em; /* 更圓潤 */
+      padding: 2.5em;
+      max-width: 600px; /* 稍微寬一些 */
+      width: 90%; /* 適應小螢幕 */
+      margin: 0 auto;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25); /* 更明顯的陰影 */
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5em; /* 元素間距 */
+      position: relative; /* 用於彈出窗口 */
+    }
+
+    /* --- 領養區樣式 --- */
+    #adopt-area {
+      display: none; /* 預設隱藏 */
+      padding: 1em;
+      border: 2px dashed #FF90B3;
+      border-radius: 1em;
+      background-color: rgba(255, 255, 255, 0.7);
+    }
+    #adopt-area input {
+      width: calc(100% - 20px); /* 調整寬度 */
+      padding: 0.8em;
+      margin-bottom: 1em;
+      font-size: 1.1em;
+      border-radius: 0.7em;
+      border: 1px solid #FFC0CB;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+    #adopt-area button {
+      background-color: #FF69B4; /* 粉色系 */
+      padding: 0.9em 2em;
+      font-size: 1.2em;
+      border-radius: 1.5em;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    #adopt-area button:hover {
+      background-color: #FF1493;
+      transform: translateY(-2px); /* 輕微上浮 */
+    }
+
+    /* --- 查看海豹按鈕樣式 --- */
+    #get-area {
+      background-color: #87CEEB; /* 藍色系 */
+      padding: 0.9em 2em;
+      font-size: 1.2em;
+      border-radius: 1.5em;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      display: block; /* 預設顯示 */
+      margin-top: 1em; /* 與上方內容間距 */
+    }
+    #get-area:hover {
+      background-color: #5F9EA0;
+      transform: translateY(-2px);
+    }
+
+    /* --- 海豹狀態顯示區 --- */
+    #seal-display-area {
+      display: none; /* 預設隱藏，由JS控制顯示 */
+      text-align: left;
+      margin-top: 1.5em;
+      border: 2px solid #ADD8E6; /* 淺藍邊框 */
+      border-radius: 1.5em;
+      padding: 1.5em;
+      background-color: rgba(255, 255, 255, 0.8);
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+    }
+
+    #seal-display-area h2 {
+      text-align: center;
+      color: #36454F; /* 深灰色 */
+      margin-top: 0;
+      font-size: 1.8em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5em;
+    }
+    #seal-display-area h2 span {
+      flex-grow: 1;
+    }
+    #seal-display-area h2 .edit-icon {
+      cursor: pointer;
+      font-size: 0.7em;
+      color: #888;
+      transition: color 0.2s;
+    }
+    #seal-display-area h2 .edit-icon:hover {
+      color: #333;
+    }
+
+    #seal-image-container {
+      text-align: center;
+      margin-bottom: 1.5em;
+    }
+    #seal-image-container img {
+      max-width: 90%;
+      height: auto;
+      border-radius: 1.2em;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+      border: 5px solid #F0F8FF; /* 淺藍色邊框 */
+    }
+
+    .status-section {
+      display: flex;
+      flex-wrap: wrap; /* 讓內容換行 */
+      gap: 1em; /* 項目間距 */
+      margin-bottom: 1.5em;
+      justify-content: center; /* 居中對齊 */
+    }
+
+    .status-item {
+      flex: 1 1 calc(50% - 1em); /* 兩個一排，減去間距 */
+      min-width: 200px; /* 最小寬度，防止過窄 */
+      background-color: #F8F8FF; /* 淺色背景 */
+      padding: 0.8em 1em;
+      border-radius: 0.8em;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      display: flex;
+      align-items: center;
+      gap: 0.8em;
+      font-size: 1.1em;
+      color: #555;
+    }
+    .status-item i {
+      font-size: 1.5em; /* 圖標大小 */
+      color: #FF69B4; /* 圖標顏色 */
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      background-color: #e0e0e0;
+      border-radius: 0.5em;
+      overflow: hidden;
+      margin-top: 0.3em;
+      height: 15px; /* 進度條高度 */
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%; /* 由JS控制 */
+      background-color: #FF69B4; /* 好感度粉色 */
+      border-radius: 0.5em;
+      transition: width 0.5s ease-in-out;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 0.3em;
+      color: white;
+      font-size: 0.8em;
+      font-weight: bold;
+    }
+
+    /* 特定進度條顏色 */
+    .progress-bar.affection { background-color: #FF69B4; } /* 粉紅 */
+    .progress-bar.hunger { background-color: #FFA500; }    /* 橘色 */
+    .progress-bar.fatness { background-color: #9ACD32; }   /* 黃綠色 */
+    .progress-bar.health { background-color: #4682B4; }    /* 藍色 */
+
+
+    #seal-description {
+      background-color: #FFFACD; /* 淺黃色背景 */
+      padding: 1em 1.5em;
+      border-radius: 1em;
+      margin-bottom: 1.5em;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      font-style: italic;
+      color: #6A5ACD; /* 紫羅蘭色 */
+      font-size: 1.1em;
+      line-height: 1.6;
+    }
+
+    /* --- 互動按鈕區 --- */
+    .interaction-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1em;
+      margin-top: 2em;
+    }
+
+    .interaction-buttons button {
+      flex: 1 1 auto; /* 自動分配空間 */
+      min-width: 120px; /* 最小按鈕寬度 */
+      background-color: #9ACD32; /* 綠色系 */
+      padding: 1em 1.5em;
+      font-size: 1.1em;
+      border-radius: 1.5em;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5em;
+    }
+    .interaction-buttons button:hover {
+      background-color: #6B8E23;
+      transform: translateY(-3px) scale(1.02);
+    }
+    /* 特定按鈕顏色 */
+    .interaction-buttons button.feed { background-color: #FFD700; color: #7B3F00;} /* 金色，配深棕文字 */
+    .interaction-buttons button.feed:hover { background-color: #DAA520; }
+    .interaction-buttons button.play { background-color: #87CEEB; } /* 藍色 */
+    .interaction-buttons button.play:hover { background-color: #5F9EA0; }
+    .interaction-buttons button.pet { background-color: #FFB6C1; } /* 淺粉 */
+    .interaction-buttons button.pet:hover { background-color: #FF6A9F; }
+    .interaction-buttons button.clean { background-color: #AFEEEE; } /* 淺綠藍 */
+    .interaction-buttons button.clean:hover { background-color: #87CEEB; }
+    .interaction-buttons button.inventory { background-color: #DDA0DD; } /* 紫色 */
+    .interaction-buttons button.inventory:hover { background-color: #BA55D3; }
+
+    /* --- 彈出式面板樣式 (用於餵食) --- */
+    .modal {
+      display: none; /* Hidden by default */
+      position: fixed; /* Stay in place */
+      z-index: 100; /* Sit on top */
+      left: 0;
+      top: 0;
+      width: 100%; /* Full width */
+      height: 100%; /* Full height */
+      overflow: auto; /* Enable scroll if needed */
+      background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background-color: #fefefe;
+      margin: auto;
+      padding: 2em;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 400px;
+      border-radius: 1.5em;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      text-align: center;
+      position: relative;
+    }
+
+    .close-button {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      cursor: pointer;
+    }
+
+    .close-button:hover,
+    .close-button:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .food-selection button {
+      background-color: #FFDAB9; /* 桃色 */
+      color: #4B2E2E;
+      border: 1px solid #FFC0CB;
+      padding: 0.8em 1.2em;
+      margin: 0.5em;
+      border-radius: 1em;
+      transition: background-color 0.3s;
+      font-size: 1em;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .food-selection button:hover {
+      background-color: #FFC0CB;
+    }
+
+
+    audio {
+      position: fixed;
+      bottom: 15px;
+      left: 15px;
+      width: 250px; /* 調整播放器寬度 */
+      opacity: 0.8; /* 稍微透明 */
+      z-index: 99; /* 確保在上面 */
+    }
+
+    /* 響應式設計 */
+    @media (max-width: 768px) {
+      body {
+        padding: 1em;
+      }
+      h1 {
+        font-size: 2.5em;
+        padding: 0.3em 0.8em;
+      }
+      .container {
+        padding: 1.5em;
+        margin: 1em auto;
+        gap: 1em;
+      }
+      #seal-display-area {
+        padding: 1em;
+      }
+      .status-item {
+        flex: 1 1 100%; /* 小螢幕下每個狀態一行 */
+        min-width: unset; /* 取消最小寬度 */
+      }
+      .interaction-buttons button {
+        min-width: unset;
+        flex: 1 1 calc(50% - 0.5em); /* 兩個一排 */
+        font-size: 1em;
+        padding: 0.8em 1em;
+      }
+    }
+    @media (max-width: 480px) {
+      .interaction-buttons button {
+        flex: 1 1 100%; /* 一個一排 */
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+  <h1>🦭 領養小海豹遊戲</h1>
+
+  <div class="container">
+    <div id="adopt-area">
+      <h2>🎉 歡迎新主人！</h2>
+      <input type="text" id="seal-name" placeholder="請輸入小海豹的名字" />
+      <br />
+      <button onclick="adoptSeal()">🐚 領養你的小海豹</button>
+      <p style="font-size: 0.9em; color: #888;">你只能領養一隻海豹喔！</p>
+    </div>
+  
+    <button id='get-area' onclick="getSeal()">🪸 查看我的海豹</button>
+  
+    <div id="seal-display-area">
+      <h2 id="seal-display-name">
+        <span>你的海豹名字是：<span id="seal-current-name">[海豹名字]</span></span>
+        <i class="fas fa-pencil-alt edit-icon" onclick="editSealName()"></i>
+      </h2>
+
+      <div id="seal-image-container">
+        <img src="https://i.imgur.com/gK9pMhB.jpeg" alt="可愛的小海豹" width="300" id="current-seal-image">
+      </div>
+
+      <div class="status-section">
+        <div class="status-item">
+          <i class="fas fa-heart"></i>
+          <div>
+            好感度：<span id="affection-value">--</span> / 100
+            <div class="progress-bar-container"><div class="progress-bar affection" id="affection-bar"></div></div>
+          </div>
+        </div>
+
+        <div class="status-item">
+          <i class="fas fa-birthday-cake"></i>
+          <div>
+            年齡：<span id="age-value">--</span> 歲
+          </div>
+        </div>
+
+        <div class="status-item">
+          <i class="fas fa-weight-hanging"></i>
+          <div>
+            肥胖度：<span id="fatness-value">--</span>
+            <div class="progress-bar-container"><div class="progress-bar fatness" id="fatness-bar"></div></div>
+          </div>
+        </div>
+
+        <div class="status-item">
+          <i class="fas fa-notes-medical"></i>
+          <div>
+            健康：<span id="health-value">--</span>
+            <div class="progress-bar-container"><div class="progress-bar health" id="health-bar"></div></div>
+          </div>
+        </div>
+        
+        <div class="status-item">
+          <i class="fas fa-utensils"></i>
+          <div>
+            飽食度：<span id="hunger-value">--</span> / 100
+            <div class="progress-bar-container"><div class="progress-bar hunger" id="hunger-bar"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <p id="seal-description">小海豹目前看起來很舒適，懶洋洋地曬著太陽。</p>
+
+      <div class="interaction-buttons">
+        <button class="feed" onclick="showFeedModal()"><i class="fas fa-fish"></i> 餵食</button>
+        <button class="play" onclick="interact('play')"><i class="fas fa-ball-pile"></i> 玩耍</button>
+        <button class="pet" onclick="interact('pet')"><i class="fas fa-hand-paper"></i> 撫摸</button>
+        <button class="clean" onclick="interact('clean')"><i class="fas fa-soap"></i> 清潔</button>
+        <button class="inventory" onclick="interact('inventory')"><i class="fas fa-briefcase"></i> 背包</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="feedModal" class="modal">
+    <div class="modal-content">
+      <span class="close-button" onclick="closeFeedModal()">&times;</span>
+      <h3>選擇食物</h3>
+      <div class="food-selection">
+        <button onclick="feedSeal('fish')"><i class="fas fa-fish"></i> 新鮮的魚</button>
+        <button onclick="feedSeal('seaweed')"><i class="fas fa-leaf"></i> 海帶</button>
+        <button onclick="feedSeal('snack')"><i class="fas fa-cookie-bite"></i> 海豹零食</button>
+      </div>
+      <p style="font-size: 0.9em; color: #888; margin-top: 1.5em;">不同的食物對飽食度、肥胖度和好感度有不同影響！</p>
+    </div>
+  </div>
+
+  <audio id='bgm2' autoplay loop controls volume="0.2">
+    <source src="music/PrincessMaker4Portable(PSP)OST32.mp3" type="audio/mpeg">
+    您的瀏覽器不支援音樂播放
+  </audio>
+
+  <script>
+    const userId = localStorage.getItem("user_id"); // 確保 userId 存在於 localStorage
+    let currentSealData = null; // 用於儲存當前海豹的數據
+
+    // 頁面加載時自動嘗試獲取海豹狀態
+    window.addEventListener("DOMContentLoaded", () => {
+      getSeal();
+      // 確保背景音樂可以播放
+      const bgm = document.getElementById("bgm2");
+      bgm.muted = false;
+      bgm.volume = 0.2;
+      bgm.play().catch(e => console.log("音樂自動播放失敗:", e)); // 捕獲可能的錯誤
+    });
+
+    // 用戶點擊頁面任意處時嘗試播放音樂 (解決瀏覽器自動播放限制)
+    window.addEventListener("click", () => {
+      const bgm = document.getElementById("bgm2");
+      if (bgm.paused) {
+        bgm.muted = false;
+        bgm.volume = 0.2;
+        bgm.play().catch(e => console.log("音樂播放失敗:", e));
+      }
+    });
+
+    // 領養海豹函數
+    async function adoptSeal() {
+      console.log("目前 localStorage 的 userId:", userId);
+      const nameInput = document.getElementById("seal-name");
+      const sealName = nameInput.value.trim();
+
+      if (!sealName) {
+        alert("請輸入小海豹的名字喔！");
         return;
       }
 
-      const data = await response.json();
-      const seal = data.seal;
-      const image = data.image;
+      try {
+        const response = await fetch("/seal/adopt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ owner_id: parseInt(userId), name: sealName })
+        });
 
-      document.getElementById("seal-info").innerText =
-        `你的海豹名字是：${seal.name || "未命名"}\n說明：${image.description}`;
+        if (response.ok) {
+          alert("恭喜！你成功領養了一隻可愛的小海豹！");
+          // 領養成功後，直接顯示海豹狀態
+          getSeal();
+        } else if (response.status === 409) { // 假設後端返回409表示已領養
+          alert("你已經領養過一隻海豹了喔！");
+          getSeal(); // 如果已經領養，也直接顯示狀態
+        } else {
+          alert("領養失敗，請稍後再試。");
+          console.error("領養失敗響應:", await response.text());
+        }
+      } catch (error) {
+        console.error("領養請求錯誤:", error);
+        alert("領養過程中發生錯誤，請檢查網路。");
+      }
+    }
 
-      document.getElementById("seal-image").innerHTML =
-        `<img src="${image.img}" alt="seal image" width="300" style="border-radius: 12px; box-shadow: 0 0 8px gray;">`;
+    // 獲取並顯示海豹狀態函數
+    async function getSeal() {
+      console.log("嘗試獲取海豹狀態，userId:", userId);
+      // 確保userId存在，否則可能無限循環或報錯
+      if (!userId) {
+        console.warn("userId 未找到，無法獲取海豹狀態。顯示領養區。");
+        document.getElementById("adopt-area").style.display = "block";
+        document.getElementById("get-area").style.display = "none";
+        document.getElementById("seal-display-area").style.display = "none";
+        return;
+      }
+
+      try {
+        const response = await fetch(`/seal/status/${userId}`);
+        if (!response.ok) {
+          // 如果沒有海豹（例如404），顯示領養區
+          if (response.status === 404) {
+            document.getElementById("seal-info").innerText = "你還沒有海豹喔，快來領養一隻吧！";
+            document.getElementById("adopt-area").style.display = "block";
+            document.getElementById("get-area").style.display = "none";
+            document.getElementById("seal-display-area").style.display = "none";
+          } else {
+            alert("獲取海豹狀態失敗，請稍後再試。");
+            console.error("獲取海豹狀態響應:", await response.text());
+          }
+          return;
+        }
+
+        const data = await response.json();
+        currentSealData = data.seal; // 儲存海豹數據
+        const image = data.image;
+
+        // 更新UI顯示
+        document.getElementById("seal-current-name").innerText = currentSealData.name || "未命名";
+        document.getElementById("current-seal-image").src = image.img;
+        document.getElementById("current-seal-image").alt = image.description;
+        document.getElementById("seal-description").innerText = image.description;
+
+        // 隱藏領養區，顯示海豹狀態區
+        document.getElementById("adopt-area").style.display = "none";
+        document.getElementById("get-area").style.display = "none"; // 獲取到海豹後，這個按鈕就沒用了
+        document.getElementById("seal-display-area").style.display = "block";
+
+        // 更新數值顯示 (使用佔位符或預設值)
+        updateSealStats(currentSealData);
+
+      } catch (error) {
+        console.error("獲取海豹狀態請求錯誤:", error);
+        alert("獲取海豹狀態過程中發生錯誤，請檢查網路。");
+        document.getElementById("adopt-area").style.display = "block"; // 發生錯誤時也顯示領養區
+        document.getElementById("get-area").style.display = "none";
+        document.getElementById("seal-display-area").style.display = "none";
+      }
+    }
+
+    // 更新海豹數值顯示的函數
+    function updateSealStats(seal) {
+      // 這裡假設 seal 物件中會有這些屬性，如果沒有，請確保後端返回或前端給予預設值
+      const affection = seal.affection || 80; // 範例預設值
+      const age = seal.age || 0.5;
+      const fatness = seal.fatness || 5; // 假設1-10，5為適中
+      const health = seal.health || 90; // 假設1-100
+      const hunger = seal.hunger || 70; // 假設1-100
+
+      document.getElementById("affection-value").innerText = affection;
+      document.getElementById("age-value").innerText = age;
+      document.getElementById("fatness-value").innerText = getFatnessDescription(fatness); // 轉換為文字描述
+      document.getElementById("health-value").innerText = getHealthDescription(health); // 轉換為文字描述
+      document.getElementById("hunger-value").innerText = hunger;
+
+      // 更新進度條
+      updateProgressBar("affection-bar", affection);
+      // 肥胖度進度條，可能需要特殊處理，例如中間是健康
+      updateProgressBar("fatness-bar", (fatness / 10) * 100); // 假設肥胖度0-10
+      updateProgressBar("health-bar", health);
+      updateProgressBar("hunger-bar", hunger);
+    }
+
+    // 轉換肥胖度數值為文字描述
+    function getFatnessDescription(fatness) {
+      if (fatness <= 3) return "偏瘦";
+      if (fatness <= 7) return "適中";
+      return "偏胖";
+    }
+
+    // 轉換健康數值為文字描述
+    function getHealthDescription(health) {
+      if (health >= 80) return "良好";
+      if (health >= 50) return "一般";
+      return "虛弱";
+    }
+
+    // 更新進度條寬度
+    function updateProgressBar(id, value) {
+      const bar = document.getElementById(id);
+      if (bar) {
+        bar.style.width = `${value}%`;
+      }
+    }
+
+    // 顯示餵食彈出視窗
+    function showFeedModal() {
+      document.getElementById("feedModal").style.display = "flex";
+    }
+
+    // 關閉餵食彈出視窗
+    function closeFeedModal() {
+      document.getElementById("feedModal").style.display = "none";
+    }
+
+    // 餵食海豹函數 (佔位符)
+    async function feedSeal(foodType) {
+      alert(`你餵了小海豹 ${foodType}！ (此功能待後端實作)`);
+      console.log(`餵食海豹：${foodType}`);
+      // 這裡可以呼叫後端API來實際更新海豹數據
+      // 例如：await fetch(`/seal/feed/${userId}`, { method: 'POST', body: JSON.stringify({ food: foodType }) });
+      // 然後重新獲取並更新海豹狀態 getSeal();
+      closeFeedModal();
+    }
+
+    // 互動函數 (玩耍、撫摸、清潔等)
+    async function interact(actionType) {
+      console.log(`與海豹互動：${actionType}`);
+
+      // 檢查 userId 是否存在
+      if (!userId) {
+        alert("用戶ID未找到，無法進行互動。請先登入或領養海豹。");
+        return;
+      }
+
+      let apiEndpoint = '';
+      let successMessage = '';
+      let errorMessage = '互動失敗，請稍後再試。';
+      let interactionData = { owner_id: parseInt(userId) }; // 基礎數據
+
+      switch (actionType) {
+        case 'feed':
+          // 餵食邏輯已獨立在 showFeedModal() 和 feedSeal() 中處理
+          // 所以這裡不需要特別處理 'feed'，除非你有另一種不通過 modal 的餵食方式
+          console.log("餵食操作將通過獨立的彈出窗口處理。");
+          showFeedModal(); // 再次提醒打開餵食窗口
+          return; // 餵食有自己的流程，直接返回
+        case 'play':
+        getSeal();
+          apiEndpoint = `/seal/play`; // 假設後端有 /seal/play 接口
+          successMessage = "你和小海豹開心地玩耍了！";
+          interactionData.action = 'play'; // 可以傳遞動作類型給後端
+          break;
+        case 'pet':
+          apiEndpoint = `/seal/pet`; // 假設後端有 /seal/pet 接口
+          successMessage = "你輕輕撫摸了小海豹，它看起來很享受。";
+          interactionData.action = 'pet';
+          break;
+        case 'clean':
+          apiEndpoint = `/seal/clean`; // 假設後端有 /seal/clean 接口
+          successMessage = "你幫小海豹清潔了一下，它變得乾淨多了！";
+          interactionData.action = 'clean';
+          break;
+        case 'inventory':
+          alert("這裡將顯示你的背包物品 (此功能待後端和UI實作)");
+          console.log("查看背包");
+          return; // 查看背包通常不需要更新海豹狀態，除非背包操作會影響
+        default:
+          alert(`未知互動類型: ${actionType}`);
+          return;
+      }
+
+      // 如果有定義API endpoint，則發送請求
+    
+      
+    }
+    // 編輯海豹名字函數 (佔位符)
+    async function editSealName() {
+      const newName = prompt("請輸入小海豹的新名字：", currentSealData.name);
+      if (newName && newName.trim() !== "" && newName.trim() !== currentSealData.name) {
+        alert(`你將小海豹的名字改為：${newName} (此功能待後端實作)`);
+        console.log(`修改海豹名字為：${newName}`);
+        // 這裡可以呼叫後端API來更新海豹名字
+        // 例如：await fetch(`/seal/rename/${userId}`, { method: 'POST', body: JSON.stringify({ new_name: newName }) });
+        // 然後重新獲取並更新海豹狀態 getSeal();
+        document.getElementById("seal-current-name").innerText = newName; // 暫時更新前端
+      }
     }
   </script>
 </body>
